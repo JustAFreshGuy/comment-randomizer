@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="14" y1="10" x2="112" y2="118" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF7A9B"/>
+      <stop offset=".48" stop-color="#D946EF"/>
+      <stop offset="1" stop-color="#6D3AE8"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="48" y1="25" x2="83" y2="99" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDFE"/>
+      <stop offset="1" stop-color="#FCE7FF"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0" cy="0" r="1" gradientTransform="matrix(0 67 -67 0 41 20)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#FFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="25" y="12" width="78" height="104" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="34" fill="#23113B"/>
+  <rect x="4" y="4" width="120" height="120" rx="34" fill="url(#bg)"/>
+  <rect x="4.75" y="4.75" width="118.5" height="118.5" rx="33.25" stroke="#FFF" stroke-opacity=".3" stroke-width="1.5"/>
+  <rect x="4" y="4" width="120" height="120" rx="34" fill="url(#shine)"/>
+  <path d="M67 24 39 68h21l-4 37 34-49H69l-2-32Z" fill="#FFF3A6" opacity=".72" filter="url(#glow)"/>
+  <path d="m68 22-29 47h22l-4 38 36-53H70l-2-32Z" fill="url(#bolt)" stroke="#57227B" stroke-linejoin="round" stroke-width="4"/>
+  <path d="m68 22-29 47h22l-4 38 36-53H70l-2-32Z" stroke="#FFF" stroke-linejoin="round" stroke-opacity=".85" stroke-width="1.2"/>
+  <path d="m24 40 3.3 7.7L35 51l-7.7 3.3L24 62l-3.3-7.7L13 51l7.7-3.3L24 40Zm79 33 2.5 5.5L111 81l-5.5 2.5L103 89l-2.5-5.5L95 81l5.5-2.5L103 73Z" fill="#FFF6C9"/>
+  <circle cx="97" cy="31" r="3" fill="#FFF" fill-opacity=".9"/>
+</svg>

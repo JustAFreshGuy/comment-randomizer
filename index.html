@@ -1,0 +1,2127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Comment Randomizer — YouTube & Giveaway Picker</title>
+    <link rel="icon" type="image/svg+xml" href="energy-icon.svg">
+    <style>
+        /* ==========================================================================
+           1. CSS VARIABLES & RESET (100% Self-Contained, Zero External CDNs)
+           ========================================================================== */
+        :root {
+            --bg-primary: #090b10;
+            --bg-secondary: #111520;
+            --bg-card: rgba(20, 25, 38, 0.85);
+            --bg-input: #0d1018;
+            --border-subtle: rgba(255, 255, 255, 0.09);
+            --border-focus: #f43f5e;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #f43f5e;
+            --accent-secondary: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #9333ea 100%);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-full: 9999px;
+            --shadow-card: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+            background-image:
+                radial-gradient(circle at 15% 0%, rgba(244, 63, 94, 0.14), transparent 38%),
+                radial-gradient(circle at 85% 10%, rgba(139, 92, 246, 0.14), transparent 40%);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        button, input, select, textarea {
+            font-family: inherit;
+            color: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            background: none;
+            touch-action: manipulation;
+        }
+
+        /* ==========================================================================
+           2. LAYOUT & CONTAINERS
+           ========================================================================== */
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 16px 14px 64px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media (min-width: 640px) {
+            .app-shell {
+                padding: 24px 20px 80px;
+                gap: 20px;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-card);
+        }
+
+        @media (min-width: 640px) {
+            .card {
+                padding: 22px;
+            }
+        }
+
+        /* ==========================================================================
+           3. HEADER & BRANDING
+           ========================================================================== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+        }
+
+        .brand-title-wrap {
+            min-width: 0;
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .brand-sub {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            border-radius: var(--radius-full);
+            background: rgba(16, 185, 129, 0.14);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.28);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .icon-btn.muted {
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           4. SOURCE TABS & INPUT CONTROLS
+           ========================================================================== */
+        .tabs-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: var(--bg-input);
+            padding: 5px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 9px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.09);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .tab-panel.active {
+            display: flex;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        @media (min-width: 600px) {
+            .input-group.row {
+                flex-direction: row;
+            }
+        }
+
+        .text-input, .select-input, .textarea-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 11px 14px;
+            font-size: 0.92rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .text-input:focus, .select-input:focus, .textarea-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.18);
+        }
+
+        .textarea-input {
+            min-height: 130px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 18px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 700;
+            transition: transform 0.12s, opacity 0.15s, background 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(244, 63, 94, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            opacity: 0.94;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-sm {
+            padding: 7px 12px;
+            font-size: 0.78rem;
+            border-radius: var(--radius-sm);
+        }
+
+        /* ==========================================================================
+           5. YOUTUBE CONTROLS, ACCORDION & VIDEO PREVIEW
+           ========================================================================== */
+        .yt-options-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 540px) {
+            .yt-options-row {
+                grid-template-columns: 180px 1fr;
+                align-items: end;
+            }
+        }
+
+        .accordion {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.02);
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        .accordion-chevron {
+            transition: transform 0.2s ease;
+        }
+
+        .accordion.open .accordion-chevron {
+            transform: rotate(180deg);
+        }
+
+        .accordion-body {
+            display: none;
+            padding: 12px 14px 14px;
+            border-top: 1px solid var(--border-subtle);
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .accordion.open .accordion-body {
+            display: flex;
+        }
+
+        .key-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .key-input-wrap .text-input {
+            padding-right: 44px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+        }
+
+        .key-eye-btn {
+            position: absolute;
+            right: 8px;
+            padding: 6px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+        }
+
+        .key-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.84rem;
+            color: var(--text-primary);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        /* Progress Bar */
+        .progress-wrap {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px 12px;
+            background: rgba(244, 63, 94, 0.08);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            border-radius: var(--radius-md);
+        }
+
+        .progress-wrap.visible {
+            display: flex;
+        }
+
+        .progress-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #fda4af;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-gradient);
+            transition: width 0.25s ease;
+        }
+
+        /* Video Preview Card */
+        .video-card {
+            display: none;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            align-items: center;
+        }
+
+        .video-card.visible {
+            display: flex;
+        }
+
+        .video-thumb {
+            width: 112px;
+            height: 63px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #1e293b;
+            flex-shrink: 0;
+        }
+
+        .video-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .video-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .video-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* ==========================================================================
+           6. FILTERS, RULES & POOL PREVIEW
+           ========================================================================== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .section-title {
+            font-size: 0.96rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .eligible-badge {
+            padding: 4px 11px;
+            border-radius: var(--radius-full);
+            font-size: 0.78rem;
+            font-weight: 800;
+            background: rgba(139, 92, 246, 0.16);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.35);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 640px) {
+            .filters-grid {
+                grid-template-columns: 1fr 140px;
+            }
+        }
+
+        .toggles-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        @media (min-width: 640px) {
+            .toggles-list {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .toggle-card {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .pool-drawer {
+            margin-top: 14px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 12px;
+        }
+
+        .pool-list {
+            display: none;
+            max-height: 220px;
+            overflow-y: auto;
+            margin-top: 10px;
+            padding-right: 4px;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pool-list.open {
+            display: flex;
+        }
+
+        .pool-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            padding: 8px 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+        }
+
+        .avatar-sm {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .pool-item-body {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .pool-author {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-right: 6px;
+        }
+
+        .pool-text {
+            color: var(--text-secondary);
+            word-break: break-word;
+        }
+
+        /* ==========================================================================
+           7. WINNER PICKER & SLOT ANIMATION STAGE
+           ========================================================================== */
+        .stage-card {
+            text-align: center;
+            border-color: rgba(244, 63, 94, 0.25);
+            background: linear-gradient(180deg, rgba(24, 28, 44, 0.92) 0%, rgba(15, 18, 29, 0.96) 100%);
+        }
+
+        .slot-window {
+            position: relative;
+            min-height: 92px;
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.55);
+        }
+
+        .slot-window.spinning {
+            border-color: var(--accent-primary);
+            box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.55), 0 0 24px rgba(244, 63, 94, 0.25);
+        }
+
+        .slot-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            max-width: 100%;
+        }
+
+        .slot-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .slot-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 260px;
+        }
+
+        @media (min-width: 640px) {
+            .slot-name {
+                font-size: 1.45rem;
+                max-width: 480px;
+            }
+        }
+
+        .pick-cta {
+            width: 100%;
+            padding: 15px 24px;
+            font-size: 1.08rem;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            border-radius: var(--radius-md);
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(244, 63, 94, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.14s, box-shadow 0.14s, opacity 0.15s;
+        }
+
+        .pick-cta:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(244, 63, 94, 0.5);
+        }
+
+        .pick-cta:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Winner Cards Grid */
+        .winners-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 18px;
+            text-align: left;
+        }
+
+        .winner-card {
+            background: rgba(16, 185, 129, 0.07);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            animation: popIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .winner-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .winner-rank {
+            padding: 3px 9px;
+            border-radius: var(--radius-full);
+            background: #10b981;
+            color: #042f2e;
+            font-size: 0.74rem;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .winner-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #059669;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .winner-author-wrap {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .winner-author-link {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .winner-author-link:hover {
+            text-decoration: underline;
+            color: #6ee7b7;
+        }
+
+        .winner-comment {
+            font-size: 0.88rem;
+            color: #e2e8f0;
+            background: rgba(0, 0, 0, 0.28);
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            word-break: break-word;
+            line-height: 1.45;
+        }
+
+        .winner-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* ==========================================================================
+           8. DRAW HISTORY LOG & TOAST NOTIFICATIONS
+           ========================================================================== */
+        .history-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-empty {
+            text-align: center;
+            padding: 20px 12px;
+            font-size: 0.84rem;
+            color: var(--text-muted);
+            border: 1px dashed var(--border-subtle);
+            border-radius: var(--radius-md);
+        }
+
+        .history-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+        }
+
+        .history-row-main {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .history-row-name {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .history-row-comment {
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.76rem;
+        }
+
+        .history-time {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: calc(100% - 28px);
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 11px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.84rem;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: toastSlide 0.22s ease;
+        }
+
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.info { border-left: 4px solid var(--accent-secondary); }
+
+        @keyframes toastSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Studio polish: sharper hierarchy, richer surfaces, and clearer focus states. */
+        :root {
+            --bg-primary: #070912;
+            --bg-secondary: #101321;
+            --bg-card: rgba(17, 20, 36, 0.88);
+            --bg-input: rgba(7, 9, 18, 0.82);
+            --border-subtle: rgba(190, 198, 255, 0.13);
+            --border-focus: #fb7185;
+            --accent-primary: #fb7185;
+            --accent-secondary: #a78bfa;
+            --accent-gradient: linear-gradient(135deg, #fb7185 0%, #e879f9 52%, #8b5cf6 100%);
+            --shadow-card: 0 22px 70px -32px rgba(0, 0, 0, 0.9), inset 0 1px rgba(255,255,255,.035);
+        }
+        html, body {
+            background-color: var(--bg-primary);
+            background-image: radial-gradient(ellipse at 8% 0%, rgba(244,63,94,.20), transparent 34%),
+                radial-gradient(ellipse at 94% 12%, rgba(139,92,246,.20), transparent 36%),
+                linear-gradient(180deg, #090b16 0%, #070912 72%);
+            background-attachment: fixed;
+        }
+        .app-shell { max-width: 1040px; gap: 18px; }
+        .header { padding: 17px 20px; border-radius: 20px; background: rgba(15,17,31,.76); backdrop-filter: blur(20px); }
+        .brand-logo { width: 44px; height: 44px; border-radius: 14px; box-shadow: 0 0 28px rgba(232,121,249,.3); }
+        .brand-title { font-size: 1.18rem; letter-spacing: -.035em; }
+        .card { border-radius: 20px; padding: 20px; transition: border-color .2s, transform .2s, box-shadow .2s; }
+        .card:hover { border-color: rgba(190,198,255,.21); box-shadow: 0 25px 80px -38px rgba(0,0,0,.95), 0 0 24px rgba(139,92,246,.045); }
+        .text-input, .select-input, .textarea-input { border-radius: 12px; border-color: rgba(190,198,255,.16); background: var(--bg-input); }
+        .text-input:focus, .select-input:focus, .textarea-input:focus { box-shadow: 0 0 0 4px rgba(251,113,133,.13); }
+        .btn, .pick-cta, .tab-btn, .toggle-card, .accordion-header { transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+        .btn:hover, .tab-btn:hover { transform: translateY(-1px); }
+        .btn-primary { box-shadow: 0 8px 24px rgba(244,63,94,.22); }
+        .pick-cta { box-shadow: 0 14px 36px rgba(225,29,72,.26), inset 0 1px rgba(255,255,255,.24); }
+        .pick-cta:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(225,29,72,.34); }
+        .slot-window { border-color: rgba(232,121,249,.25); background: radial-gradient(ellipse at 50% 0%, rgba(139,92,246,.16), transparent 65%), rgba(7,9,18,.58); }
+        .tabs-bar { border-bottom-color: rgba(190,198,255,.12); }
+        .tab-btn.active { text-shadow: 0 0 18px rgba(251,113,133,.28); }
+        :focus-visible { outline: 2px solid #f0abfc; outline-offset: 3px; }
+        @media (max-width: 540px) { .app-shell { padding: 12px 10px 48px; gap: 13px; } .card { padding: 15px; border-radius: 17px; } .header { padding: 13px; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+        .launch-hero {
+            min-height: 248px; position: relative; isolation: isolate; overflow: hidden;
+            display: flex; align-items: center; justify-content: space-between; gap: 20px;
+            padding: 34px 40px; border: 1px solid rgba(202,178,255,.2); border-radius: 24px;
+            background: linear-gradient(112deg, rgba(28,19,42,.96), rgba(16,18,35,.92) 55%, rgba(27,19,48,.91));
+            box-shadow: 0 28px 80px -44px rgba(139,92,246,.5), inset 0 1px rgba(255,255,255,.08);
+        }
+        .launch-hero::before { content:""; position:absolute; z-index:-1; inset:-60%; background: conic-gradient(from 140deg at 72% 50%, transparent 0 28%, rgba(236,72,153,.15) 36%, rgba(139,92,246,.2) 45%, transparent 57%); animation: heroAurora 18s linear infinite; }
+        .launch-hero::after { content:""; position:absolute; z-index:-1; inset:0; opacity:.17; background-image: radial-gradient(rgba(255,255,255,.52) .65px, transparent .65px); background-size: 18px 18px; mask-image: linear-gradient(90deg, transparent, black); }
+        .hero-orbit { position:absolute; z-index:-1; width:340px; height:340px; border:1px solid rgba(232,121,249,.09); border-radius:50%; right:4%; top:-55%; box-shadow:0 0 0 26px rgba(232,121,249,.018),0 0 0 54px rgba(232,121,249,.014); }
+        .orbit-two { width:240px; height:240px; right:8%; top:-30%; border-color:rgba(251,113,133,.12); }
+        .hero-copy { position:relative; z-index:2; }
+        .hero-kicker { display:flex; align-items:center; gap:9px; color:#e9a8ff; font-size:.68rem; font-weight:850; letter-spacing:.18em; }
+        .live-dot { width:8px; height:8px; border-radius:50%; background:#fb7185; box-shadow:0 0 13px #fb7185; animation: livePulse 1.8s ease-in-out infinite; }
+        .hero-copy h2 { margin-top:13px; font-size:clamp(2.1rem, 5vw, 3.65rem); line-height:.99; letter-spacing:-.065em; font-weight:900; }
+        .hero-copy h2 span { color:transparent; background:linear-gradient(90deg,#fda4af,#f0abfc 57%,#a78bfa); background-clip:text; -webkit-background-clip:text; }
+        .hero-copy p { margin-top:12px; color:#b7b7d1; font-size:.95rem; }
+        .hero-traits { display:flex; flex-wrap:wrap; gap:8px; margin-top:19px; }
+        .hero-traits span { padding:6px 10px; border:1px solid rgba(255,255,255,.11); border-radius:999px; background:rgba(255,255,255,.045); color:#d7d4e8; font-size:.68rem; font-weight:650; }
+        .hero-art { position:relative; width:220px; height:190px; flex:0 0 220px; display:grid; place-items:center; }
+        .hero-ring { position:absolute; width:164px; height:164px; border:1px solid rgba(232,121,249,.29); border-radius:50%; box-shadow:0 0 34px rgba(168,85,247,.12), inset 0 0 28px rgba(168,85,247,.08); }
+        .ring-back { transform:scaleX(.56) rotate(34deg); border-color:rgba(251,113,133,.35); animation:ringFloat 7s ease-in-out infinite; }
+        .ring-front { transform:scaleX(.78) rotate(-43deg); animation:ringFloat 8s ease-in-out infinite reverse; }
+        .hero-prize { width:94px; height:94px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.36); border-radius:28px; transform:rotate(-9deg); color:#fff7d6; font-size:3.5rem; background:linear-gradient(145deg,#fb7185,#c026d3 55%,#6d28d9); box-shadow:0 20px 50px rgba(192,38,211,.45), inset 0 2px 3px rgba(255,255,255,.55); animation:prizeFloat 4s ease-in-out infinite; }
+        .spark { position:absolute; color:#f5d0fe; text-shadow:0 0 15px #e879f9; animation:sparkle 2.4s ease-in-out infinite; }
+        .spark-a { top:18px; right:41px; font-size:1.5rem; }.spark-b { left:22px; top:57px; font-size:.95rem; animation-delay:.7s; }.spark-c { right:22px; bottom:42px; font-size:2rem; animation-delay:1.2s; }
+        .hero-art-label { position:absolute; bottom:-2px; text-align:center; color:#9c97b5; font-size:.52rem; letter-spacing:.14em; line-height:1.55; }
+        .hero-art-label strong { color:#f0abfc; font-size:.61rem; }
+        .brand-logo { position:relative; overflow:visible; width:48px; height:48px; background:transparent; box-shadow:none; animation:none; }
+        .brand-logo::after { content:""; position:absolute; inset:-5px; z-index:-1; border-radius:16px; background:linear-gradient(135deg,#fb7185,#a855f7); filter:blur(10px); opacity:.42; }
+        .brand-mark { display:block; width:48px; height:48px; object-fit:contain; filter:drop-shadow(0 3px 7px rgba(69,10,55,.35)); transition:transform .25s ease, filter .25s ease; }
+        .brand:hover .brand-mark { transform:translateY(-2px) rotate(-4deg) scale(1.06); filter:drop-shadow(0 5px 10px rgba(217,70,239,.42)); }
+        @keyframes heroAurora { to { transform:rotate(360deg); } }
+        @keyframes livePulse { 50% { opacity:.5; box-shadow:0 0 4px #fb7185; } }
+        @keyframes prizeFloat { 50% { transform:translateY(-7px) rotate(-5deg); } }
+        @keyframes ringFloat { 50% { margin-top:-8px; } }
+        @keyframes sparkle { 50% { transform:scale(.68) rotate(25deg); opacity:.5; } }
+        @media (max-width:640px) { .launch-hero { min-height:0; padding:26px 23px; } .hero-art { width:105px; height:145px; flex-basis:105px; transform:scale(.73); transform-origin:center right; margin-left:-26px; margin-right:-15px; } .hero-copy h2 { font-size:clamp(1.8rem, 8vw, 2.55rem); } .hero-traits { gap:5px; }.hero-traits span { font-size:.59rem; padding:5px 7px; } }
+        @media (max-width:390px) { .launch-hero { padding:22px 17px; } .hero-art { display:none; } }
+    </style>
+</head>
+<body>
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="app-shell">
+        <!-- 1. HEADER & BRANDING -->
+        <header class="header">
+            <div class="brand">
+                <div class="brand-logo" aria-hidden="true">
+                    <img class="brand-mark" src="energy-icon.svg" alt="">
+                </div>
+                <div class="brand-title-wrap">
+                    <h1 class="brand-title">Comment Randomizer</h1>
+                    <div class="brand-sub">
+                        <span>YouTube &amp; List Picker</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="launch-hero" aria-label="Giveaway studio introduction">
+            <div class="hero-orbit orbit-one"></div>
+            <div class="hero-orbit orbit-two"></div>
+            <div class="hero-copy">
+                <div class="hero-kicker"><span class="live-dot"></span> THE GIVEAWAY STUDIO</div>
+                <h2>Make the draw<br><span>the main event.</span></h2>
+                <p>Gather your entries, set the rules, and let the moment land.</p>
+                <div class="hero-traits"><span>✦ Fair random picks</span><span>◉ YouTube + custom lists</span><span>↗ Shareable history</span></div>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+                <div class="hero-ring ring-back"></div>
+                <div class="hero-ring ring-front"></div>
+                <div class="hero-prize">✦</div>
+                <span class="spark spark-a">✧</span><span class="spark spark-b">✦</span><span class="spark spark-c">·</span>
+                <div class="hero-art-label">YOUR NEXT WINNER<br><strong>IS ONE DRAW AWAY</strong></div>
+            </div>
+        </section>
+
+        <!-- 2. SOURCE TABS & DATA INPUT CARD -->
+        <section class="card" aria-label="Comment Source">
+            <div class="tabs-bar" role="tablist">
+                <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-tab="youtube">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color:#f43f5e;">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    YouTube Giveaway
+                </button>
+                <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="manual">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Manual / Paste List
+                </button>
+            </div>
+
+            <!-- PANEL 1: YOUTUBE GIVEAWAY -->
+            <div id="panel-youtube" class="tab-panel active">
+                <div>
+                    <label for="yt-url-input" class="field-label">YouTube Video URL or Video ID</label>
+                    <div class="input-group row">
+                        <input type="text" id="yt-url-input" class="text-input" placeholder="https://www.youtube.com/watch?v=... or 11-char ID">
+                        <button type="button" id="fetch-yt-btn" class="btn btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Fetch Comments
+                        </button>
+                    </div>
+                </div>
+
+                <div class="yt-options-row">
+                    <div>
+                        <label for="yt-limit-select" class="field-label">Max Comments</label>
+                        <select id="yt-limit-select" class="select-input">
+                            <option value="100">Up to 100</option>
+                            <option value="300" selected>Up to 300</option>
+                            <option value="500">Up to 500</option>
+                            <option value="0">All Comments</option>
+                        </select>
+                    </div>
+
+                    <!-- Collapsible API Key Settings (Closed by default for clean mobile view) -->
+                    <div class="accordion" id="api-accordion" hidden>
+                        <button type="button" class="accordion-header" id="api-accordion-toggle" aria-expanded="false">
+                            <span>🔑 YouTube API Key</span>
+                            <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="accordion-body">
+                            <div class="key-input-wrap">
+                                <input type="password" id="yt-api-key" class="text-input" autocomplete="off" placeholder="Paste your YouTube Data API key">
+                                <button type="button" id="toggle-key-eye" class="key-eye-btn" title="Show/Hide Key">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="key-meta-row">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="save-key-checkbox">
+                                    <span>Remember on this device</span>
+                                </label>
+                                <button type="button" id="reset-key-btn" class="btn btn-secondary btn-sm">Clear key</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fetch Progress Indicator -->
+                <div id="fetch-progress" class="progress-wrap" role="status">
+                    <div class="progress-top">
+                        <span id="fetch-status-text">Connecting to YouTube...</span>
+                        <span id="fetch-count-text">0 loaded</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="fetch-progress-bar" class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Video Preview Card -->
+                <div id="video-preview-card" class="video-card">
+                    <img id="video-thumb" class="video-thumb" src="" alt="Video Thumbnail">
+                    <div class="video-info">
+                        <div id="video-title" class="video-title">Video Title</div>
+                        <div class="video-meta">
+                            <span id="video-channel">Channel Name</span>
+                            <span>•</span>
+                            <span id="video-loaded-badge" style="color:#34d399; font-weight:700;">0 comments loaded</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: MANUAL / PASTE LIST -->
+            <div id="panel-manual" class="tab-panel">
+                <div>
+                    <label for="manual-textarea" class="field-label">Paste Comments or Names (One per line)</label>
+                    <textarea id="manual-textarea" class="textarea-input" placeholder="@alex_tech — Count me in! #giveaway&#10;@sarah_builds — Love your videos! #giveaway&#10;@marco_dev — Fingers crossed!"></textarea>
+                </div>
+                <div class="input-group row">
+                    <button type="button" id="load-sample-btn" class="btn btn-secondary">Load Sample Entries</button>
+                    <button type="button" id="import-manual-btn" class="btn btn-primary">Import to Pool</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. FILTERS & RULES SECTION -->
+        <section class="card" aria-label="Filters and Rules">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#a78bfa;">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    Filters &amp; Draw Rules
+                </h2>
+                <span id="eligible-counter" class="eligible-badge">Eligible Entries: 0</span>
+            </div>
+
+            <div class="filters-grid">
+                <div>
+                    <label for="keyword-filter" class="field-label">Keyword / #Hashtag Filter (Optional)</label>
+                    <input type="text" id="keyword-filter" class="text-input" placeholder="e.g. #giveaway or awesome">
+                </div>
+                <div>
+                    <label for="winner-count-select" class="field-label">Winners to Pick</label>
+                    <select id="winner-count-select" class="select-input">
+                        <option value="1" selected>1 Winner</option>
+                        <option value="2">2 Winners</option>
+                        <option value="3">3 Winners</option>
+                        <option value="4">4 Winners</option>
+                        <option value="5">5 Winners</option>
+                        <option value="6">6 Winners</option>
+                        <option value="7">7 Winners</option>
+                        <option value="8">8 Winners</option>
+                        <option value="9">9 Winners</option>
+                        <option value="10">10 Winners</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="toggles-list">
+                <label class="toggle-card">
+                    <input type="checkbox" id="filter-dedupe" checked>
+                    <span>Deduplicate users (1 per user)</span>
+                </label>
+                <label class="toggle-card">
+                    <input type="checkbox" id="filter-exclude-owner" checked>
+                    <span>Exclude channel owner</span>
+                </label>
+                <label class="toggle-card">
+                    <input type="checkbox" id="filter-exclude-winners" checked>
+                    <span>Exclude previous winners</span>
+                </label>
+            </div>
+
+            <!-- Collapsible Loaded Comments Preview -->
+            <div class="pool-drawer">
+                <button type="button" id="toggle-pool-btn" class="btn btn-secondary btn-sm" style="width:100%; justify-content:space-between;">
+                    <span id="pool-drawer-label">Preview Eligible Entries (0)</span>
+                    <span>▼</span>
+                </button>
+                <div id="pool-list" class="pool-list"></div>
+            </div>
+        </section>
+
+        <!-- 4. WINNER PICKER & SLOT ANIMATION STAGE -->
+        <section class="card stage-card" aria-label="Winner Picker">
+            <div id="slot-window" class="slot-window">
+                <div id="slot-display" class="slot-display">
+                    <div class="slot-avatar">?</div>
+                    <div class="slot-name" style="color:var(--text-secondary);">Load comments to start</div>
+                </div>
+            </div>
+
+            <button type="button" id="pick-winner-btn" class="pick-cta" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                    <rect x="2" y="7" width="20" height="5"></rect>
+                    <line x1="12" y1="22" x2="12" y2="7"></line>
+                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                </svg>
+                Pick Winner!
+            </button>
+
+            <div id="winners-grid" class="winners-grid"></div>
+        </section>
+
+        <!-- 5. DRAW HISTORY LOG -->
+        <section class="card" aria-label="Draw History">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#34d399;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Draw History (<span id="history-count">0</span>)
+                </h2>
+                <div class="history-actions">
+                    <button type="button" id="copy-all-history-btn" class="btn btn-secondary btn-sm" disabled>Copy All Winners</button>
+                    <button type="button" id="export-csv-btn" class="btn btn-secondary btn-sm" disabled>Export CSV</button>
+                    <button type="button" id="clear-history-btn" class="btn btn-secondary btn-sm" disabled>Clear</button>
+                </div>
+            </div>
+            <div id="history-list" class="history-list">
+                <div class="history-empty">No winners drawn yet. Pick a winner above to record history!</div>
+            </div>
+        </section>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            // ======================================================================
+            // 1. STATE & CONSTANTS
+            // ======================================================================
+            const DEFAULT_API_KEY = "AIzaSyB6B6tK05kyeDBsQNOBfDs-Zn1iNcbUc9U";
+            const STORAGE_KEY_API = "yt_randomizer_api_key_v1";
+
+            const state = {
+                rawEntries: [],          // All fetched or imported entries
+                eligibleEntries: [],     // Filtered entries ready for draw
+                channelOwnerId: null,    // YouTube video author channel ID
+                videoTitle: "",
+                soundEnabled: true,
+                isSpinning: false,
+                currentWinners: [],
+                history: [],             // { id, author, authorUrl, text, timestamp, source }
+                audioCtx: null
+            };
+
+            // ======================================================================
+            // 2. DOM REFERENCES
+            // ======================================================================
+            const dom = {
+                tabBtns: document.querySelectorAll(".tab-btn"),
+                panelYoutube: document.getElementById("panel-youtube"),
+                panelManual: document.getElementById("panel-manual"),
+
+                ytUrlInput: document.getElementById("yt-url-input"),
+                fetchYtBtn: document.getElementById("fetch-yt-btn"),
+                ytLimitSelect: document.getElementById("yt-limit-select"),
+
+                apiAccordion: document.getElementById("api-accordion"),
+                apiAccordionToggle: document.getElementById("api-accordion-toggle"),
+                ytApiKey: document.getElementById("yt-api-key"),
+                toggleKeyEye: document.getElementById("toggle-key-eye"),
+                saveKeyCheckbox: document.getElementById("save-key-checkbox"),
+                resetKeyBtn: document.getElementById("reset-key-btn"),
+
+                fetchProgress: document.getElementById("fetch-progress"),
+                fetchStatusText: document.getElementById("fetch-status-text"),
+                fetchCountText: document.getElementById("fetch-count-text"),
+                fetchProgressBar: document.getElementById("fetch-progress-bar"),
+
+                videoPreviewCard: document.getElementById("video-preview-card"),
+                videoThumb: document.getElementById("video-thumb"),
+                videoTitle: document.getElementById("video-title"),
+                videoChannel: document.getElementById("video-channel"),
+                videoLoadedBadge: document.getElementById("video-loaded-badge"),
+
+                manualTextarea: document.getElementById("manual-textarea"),
+                loadSampleBtn: document.getElementById("load-sample-btn"),
+                importManualBtn: document.getElementById("import-manual-btn"),
+
+                eligibleCounter: document.getElementById("eligible-counter"),
+                keywordFilter: document.getElementById("keyword-filter"),
+                winnerCountSelect: document.getElementById("winner-count-select"),
+                filterDedupe: document.getElementById("filter-dedupe"),
+                filterExcludeOwner: document.getElementById("filter-exclude-owner"),
+                filterExcludeWinners: document.getElementById("filter-exclude-winners"),
+
+                togglePoolBtn: document.getElementById("toggle-pool-btn"),
+                poolDrawerLabel: document.getElementById("pool-drawer-label"),
+                poolList: document.getElementById("pool-list"),
+
+                slotWindow: document.getElementById("slot-window"),
+                slotDisplay: document.getElementById("slot-display"),
+                pickWinnerBtn: document.getElementById("pick-winner-btn"),
+                winnersGrid: document.getElementById("winners-grid"),
+
+                historyCount: document.getElementById("history-count"),
+                historyList: document.getElementById("history-list"),
+                copyAllHistoryBtn: document.getElementById("copy-all-history-btn"),
+                exportCsvBtn: document.getElementById("export-csv-btn"),
+                clearHistoryBtn: document.getElementById("clear-history-btn"),
+
+                toastContainer: document.getElementById("toast-container"),
+                confettiCanvas: document.getElementById("confetti-canvas")
+            };
+
+            // ======================================================================
+            // 3. UTILITIES (Toast, Clipboard, Crypto RNG, Audio, Confetti)
+            // ======================================================================
+            function showToast(message, type = "info") {
+                const toast = document.createElement("div");
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                dom.toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = "0";
+                    toast.style.transition = "opacity 0.2s";
+                    setTimeout(() => toast.remove(), 220);
+                }, 3200);
+            }
+
+            function copyToClipboard(text, successMsg = "Copied to clipboard!") {
+                try {
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    ta.style.position = "fixed";
+                    ta.style.left = "-9999px";
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(ta);
+                    showToast(successMsg, "success");
+                } catch (err) {
+                    showToast("Could not copy text.", "error");
+                }
+            }
+
+            // Unbiased cryptographic random integer in [0, max)
+            function secureRandomInt(max) {
+                if (max <= 0) return 0;
+                const array = new Uint32Array(1);
+                const limit = Math.floor(0xffffffff / max) * max;
+                let rand;
+                do {
+                    window.crypto.getRandomValues(array);
+                    rand = array[0];
+                } while (rand >= limit);
+                return rand % max;
+            }
+
+            // Web Audio API Synthesizer (Zero external audio files)
+            function playSound(type) {
+                if (!state.soundEnabled) return;
+                try {
+                    if (!state.audioCtx) {
+                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                        if (AudioCtx) state.audioCtx = new AudioCtx();
+                    }
+                    if (!state.audioCtx) return;
+                    if (state.audioCtx.state === "suspended") {
+                        state.audioCtx.resume();
+                    }
+
+                    const ctx = state.audioCtx;
+                    const now = ctx.currentTime;
+
+                    if (type === "tick") {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = "triangle";
+                        osc.frequency.setValueAtTime(520 + Math.random() * 140, now);
+                        osc.frequency.exponentialRampToValueAtTime(180, now + 0.045);
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.05);
+                    } else if (type === "win") {
+                        const notes = [523.25, 659.25, 783.99, 1046.5];
+                        notes.forEach((freq, i) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = "sine";
+                            osc.frequency.setValueAtTime(freq, now + i * 0.09);
+                            gain.gain.setValueAtTime(0.14, now + i * 0.09);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.45);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start(now + i * 0.09);
+                            osc.stop(now + i * 0.09 + 0.48);
+                        });
+                    }
+                } catch (e) {
+                    // Ignore audio restriction errors
+                }
+            }
+
+            // Lightweight Canvas Confetti Burst
+            function launchConfetti() {
+                const canvas = dom.confettiCanvas;
+                const ctx = canvas.getContext("2d");
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const colors = ["#f43f5e", "#8b5cf6", "#10b981", "#f59e0b", "#38bdf8", "#fb7185"];
+                const particles = Array.from({ length: 95 }, () => ({
+                    x: canvas.width * 0.5 + (Math.random() - 0.5) * 140,
+                    y: canvas.height * 0.45,
+                    vx: (Math.random() - 0.5) * 16,
+                    vy: -Math.random() * 14 - 4,
+                    size: Math.random() * 7 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    vRot: (Math.random() - 0.5) * 12,
+                    alpha: 1
+                }));
+
+                let frame = 0;
+                function animate() {
+                    frame++;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    let active = false;
+
+                    particles.forEach((p) => {
+                        if (p.alpha <= 0.02) return;
+                        active = true;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.42; // gravity
+                        p.vx *= 0.985;
+                        p.rotation += p.vRot;
+                        if (frame > 55) p.alpha -= 0.02;
+
+                        ctx.save();
+                        ctx.globalAlpha = Math.max(0, p.alpha);
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rotation * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+                        ctx.restore();
+                    });
+
+                    if (active && frame < 140) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            // ======================================================================
+            // 4. YOUTUBE DATA API v3 INTEGRATION
+            // ======================================================================
+            function extractYouTubeVideoId(input) {
+                const trimmed = (input || "").trim();
+                if (!trimmed) return null;
+                if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+
+                const patterns = [
+                    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/,
+                    /[?&]v=([a-zA-Z0-9_-]{11})/
+                ];
+                for (const regex of patterns) {
+                    const match = trimmed.match(regex);
+                    if (match && match[1]) return match[1];
+                }
+                return null;
+            }
+
+            async function fetchYouTubeComments() {
+                const videoId = extractYouTubeVideoId(dom.ytUrlInput.value);
+                if (!videoId) {
+                    showToast("Please enter a valid YouTube Video URL or 11-character ID.", "error");
+                    dom.ytUrlInput.focus();
+                    return;
+                }
+
+                const apiKey = dom.ytApiKey.value.trim();
+                if (!apiKey) {
+                    showToast("Please enter a YouTube Data API v3 key in API Key Settings.", "error");
+                    dom.apiAccordion.classList.add("open");
+                    dom.ytApiKey.focus();
+                    return;
+                }
+
+                const maxComments = parseInt(dom.ytLimitSelect.value, 10); // 0 = All
+
+                dom.fetchYtBtn.disabled = true;
+                dom.fetchProgress.classList.add("visible");
+                dom.fetchStatusText.textContent = "Fetching video details...";
+                dom.fetchCountText.textContent = "0 loaded";
+                dom.fetchProgressBar.style.width = "10%";
+
+                try {
+                    // 1. Fetch video metadata (title, thumbnail, channelId)
+                    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${encodeURIComponent(videoId)}&key=${encodeURIComponent(apiKey)}`;
+                    const videoRes = await fetch(videoUrl);
+                    const videoData = await videoRes.json();
+
+                    if (!videoRes.ok || videoData.error) {
+                        const errMsg = videoData.error?.message || "Failed to fetch video info.";
+                        throw new Error(errMsg);
+                    }
+
+                    if (!videoData.items || videoData.items.length === 0) {
+                        throw new Error("Video not found or is private.");
+                    }
+
+                    const snippet = videoData.items[0].snippet;
+                    state.channelOwnerId = snippet.channelId || null;
+                    state.videoTitle = snippet.title || "YouTube Video";
+
+                    const thumbUrl =
+                        snippet.thumbnails?.medium?.url ||
+                        snippet.thumbnails?.default?.url ||
+                        "";
+                    dom.videoThumb.src = thumbUrl;
+                    dom.videoTitle.textContent = state.videoTitle;
+                    dom.videoChannel.textContent = snippet.channelTitle || "YouTube Creator";
+                    dom.videoPreviewCard.classList.add("visible");
+
+                    // 2. Paginate through commentThreads
+                    const fetched = [];
+                    let nextPageToken = "";
+                    let pageCount = 0;
+
+                    do {
+                        pageCount++;
+                        dom.fetchStatusText.textContent = `Fetching comments (Page ${pageCount})...`;
+                        const pageSize = maxComments > 0 ? Math.min(100, maxComments - fetched.length) : 100;
+                        let threadUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${encodeURIComponent(videoId)}&maxResults=${pageSize}&textFormat=plainText&key=${encodeURIComponent(apiKey)}`;
+                        if (nextPageToken) {
+                            threadUrl += `&pageToken=${encodeURIComponent(nextPageToken)}`;
+                        }
+
+                        const res = await fetch(threadUrl);
+                        const data = await res.json();
+
+                        if (!res.ok || data.error) {
+                            const msg = data.error?.message || "Error loading comments.";
+                            if (msg.toLowerCase().includes("disabled comments")) {
+                                throw new Error("Comments are disabled on this YouTube video.");
+                            }
+                            throw new Error(msg);
+                        }
+
+                        const items = data.items || [];
+                        for (const item of items) {
+                            const top = item.snippet?.topLevelComment?.snippet;
+                            if (!top) continue;
+                            const authorChannelId = top.authorChannelId?.value || top.authorDisplayName;
+                            fetched.push({
+                                id: item.id || `yt_${fetched.length}`,
+                                userKey: authorChannelId,
+                                author: top.authorDisplayName || "YouTube User",
+                                authorUrl: top.authorChannelUrl || `https://www.youtube.com/channel/${authorChannelId}`,
+                                avatar: top.authorProfileImageUrl || "",
+                                text: (top.textDisplay || "").trim(),
+                                source: "YouTube"
+                            });
+                        }
+
+                        dom.fetchCountText.textContent = `${fetched.length} loaded`;
+                        const pct = maxComments > 0
+                            ? Math.min(95, Math.round((fetched.length / maxComments) * 100))
+                            : Math.min(92, 15 + pageCount * 12);
+                        dom.fetchProgressBar.style.width = `${pct}%`;
+
+                        nextPageToken = data.nextPageToken || "";
+                        if (maxComments > 0 && fetched.length >= maxComments) {
+                            break;
+                        }
+                    } while (nextPageToken);
+
+                    state.rawEntries = fetched;
+                    dom.fetchProgressBar.style.width = "100%";
+                    dom.fetchStatusText.textContent = "Complete!";
+                    dom.videoLoadedBadge.textContent = `${fetched.length} comments loaded`;
+
+                    applyFilters();
+                    showToast(`Loaded ${fetched.length} YouTube comments!`, "success");
+
+                    setTimeout(() => {
+                        dom.fetchProgress.classList.remove("visible");
+                    }, 1200);
+                } catch (err) {
+                    dom.fetchProgress.classList.remove("visible");
+                    showToast(err.message || "Failed to fetch YouTube comments.", "error");
+                } finally {
+                    dom.fetchYtBtn.disabled = false;
+                }
+            }
+
+            // ======================================================================
+            // 5. MANUAL LIST IMPORT & FILTER ENGINE
+            // ======================================================================
+            function loadSampleManualEntries() {
+                const samples = [
+                    "@alex_codes — Count me in! Love the channel! #giveaway",
+                    "@sarah_design — Best tutorial on YouTube, fingers crossed! #giveaway",
+                    "@dev_marco — Awesome content as always! #giveaway",
+                    "@nina_creates — Subscribed and liked! Hoping to win! #giveaway",
+                    "@tech_tommy — This helped me so much today! #giveaway",
+                    "@elena_builds — Entering the giveaway! Good luck everyone!",
+                    "@liam_stream — Watching from Sofia! #giveaway",
+                    "@chloe_art — Would love to win this prize! #giveaway"
+                ];
+                dom.manualTextarea.value = samples.join("\n");
+                showToast("Sample entries loaded into editor.", "info");
+            }
+
+            function importManualEntries() {
+                const lines = dom.manualTextarea.value
+                    .split(/\r?\n/)
+                    .map((l) => l.trim())
+                    .filter((l) => l.length > 0);
+
+                if (lines.length === 0) {
+                    showToast("Please paste at least one name or comment.", "error");
+                    return;
+                }
+
+                state.channelOwnerId = null;
+                state.rawEntries = lines.map((line, idx) => {
+                    // Parse "Author — Comment" or "Author: Comment" if present
+                    let author = line;
+                    let text = line;
+                    const sepMatch = line.match(/^([^:—\-]{2,35})\s*(?:—|:|-)\s*(.+)$/);
+                    if (sepMatch) {
+                        author = sepMatch[1].trim();
+                        text = sepMatch[2].trim();
+                    }
+                    return {
+                        id: `manual_${idx}_${Date.now()}`,
+                        userKey: author.toLowerCase(),
+                        author,
+                        authorUrl: "",
+                        avatar: "",
+                        text,
+                        source: "Manual"
+                    };
+                });
+
+                applyFilters();
+                showToast(`Imported ${state.rawEntries.length} manual entries!`, "success");
+            }
+
+            function applyFilters() {
+                const keyword = dom.keywordFilter.value.trim().toLowerCase();
+                const dedupe = dom.filterDedupe.checked;
+                const excludeOwner = dom.filterExcludeOwner.checked;
+                const excludeWinners = dom.filterExcludeWinners.checked;
+
+                const previousWinnerKeys = new Set(
+                    state.history.map((h) => (h.userKey || h.author).toLowerCase())
+                );
+                const seenUsers = new Set();
+
+                state.eligibleEntries = state.rawEntries.filter((entry) => {
+                    // 1. Keyword / Hashtag match
+                    if (keyword) {
+                        const haystack = `${entry.author} ${entry.text}`.toLowerCase();
+                        if (!haystack.includes(keyword)) return false;
+                    }
+
+                    // 2. Exclude channel owner
+                    if (excludeOwner && state.channelOwnerId && entry.userKey === state.channelOwnerId) {
+                        return false;
+                    }
+
+                    // 3. Exclude previous winners
+                    const normalizedKey = (entry.userKey || entry.author).toLowerCase();
+                    if (excludeWinners && previousWinnerKeys.has(normalizedKey)) {
+                        return false;
+                    }
+
+                    // 4. Deduplicate per user
+                    if (dedupe) {
+                        if (seenUsers.has(normalizedKey)) return false;
+                        seenUsers.add(normalizedKey);
+                    }
+
+                    return true;
+                });
+
+                updatePoolUI();
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement("div");
+                div.textContent = str == null ? "" : String(str);
+                return div.innerHTML;
+            }
+
+            function updatePoolUI() {
+                const count = state.eligibleEntries.length;
+                dom.eligibleCounter.textContent = `Eligible Entries: ${count}`;
+                dom.poolDrawerLabel.textContent = `Preview Eligible Entries (${count})`;
+                dom.pickWinnerBtn.disabled = count === 0 || state.isSpinning;
+
+                if (count === 0) {
+                    dom.poolList.innerHTML = `<div style="text-align:center; padding:12px; color:var(--text-muted); font-size:0.8rem;">No eligible entries match current filters.</div>`;
+                    if (!state.isSpinning && state.currentWinners.length === 0) {
+                        dom.slotDisplay.innerHTML = `
+                            <div class="slot-avatar">?</div>
+                            <div class="slot-name" style="color:var(--text-secondary);">Load comments to start</div>
+                        `;
+                    }
+                    return;
+                }
+
+                if (!state.isSpinning && state.currentWinners.length === 0) {
+                    dom.slotDisplay.innerHTML = `
+                        <div class="slot-avatar">🎲</div>
+                        <div class="slot-name">Ready (${count} entries)</div>
+                    `;
+                }
+
+                // Render up to 150 preview rows for smooth mobile scrolling
+                const previewSlice = state.eligibleEntries.slice(0, 150);
+                dom.poolList.innerHTML = previewSlice
+                    .map((item) => {
+                        const initial = escapeHtml((item.author || "?").charAt(0).toUpperCase());
+                        const avatarHtml = item.avatar
+                            ? `<img class="avatar-sm" src="${escapeHtml(item.avatar)}" alt="" onerror="this.style.display='none'">`
+                            : `<div class="avatar-sm">${initial}</div>`;
+                        return `
+                            <div class="pool-item">
+                                ${avatarHtml}
+                                <div class="pool-item-body">
+                                    <span class="pool-author">${escapeHtml(item.author)}</span>
+                                    <span class="pool-text">${escapeHtml(item.text)}</span>
+                                </div>
+                            </div>
+                        `;
+                    })
+                    .join("");
+            }
+
+            // ======================================================================
+            // 6. SLOT ANIMATION & WINNER SELECTION
+            // ======================================================================
+            function renderSlotEntry(entry) {
+                const initial = escapeHtml((entry.author || "?").charAt(0).toUpperCase());
+                const avatarHtml = entry.avatar
+                    ? `<img class="slot-avatar" src="${escapeHtml(entry.avatar)}" alt="" onerror="this.outerHTML='<div class=\\'slot-avatar\\'>${initial}</div>'">`
+                    : `<div class="slot-avatar">${initial}</div>`;
+                dom.slotDisplay.innerHTML = `
+                    ${avatarHtml}
+                    <div class="slot-name">${escapeHtml(entry.author)}</div>
+                `;
+            }
+
+            function pickWinners(rerollIndex = null) {
+                if (state.isSpinning || state.eligibleEntries.length === 0) return;
+
+                const requestedCount = rerollIndex !== null
+                    ? 1
+                    : Math.min(parseInt(dom.winnerCountSelect.value, 10), state.eligibleEntries.length);
+
+                state.isSpinning = true;
+                dom.pickWinnerBtn.disabled = true;
+                dom.slotWindow.classList.add("spinning");
+
+                // Pre-select unbiased winners via Fisher-Yates partial shuffle
+                const poolCopy = [...state.eligibleEntries];
+                // If rerolling a single slot, exclude other currently displayed winners
+                if (rerollIndex !== null && state.currentWinners.length > 1) {
+                    const activeIds = new Set(
+                        state.currentWinners
+                            .filter((_, idx) => idx !== rerollIndex)
+                            .map((w) => w.id)
+                    );
+                    for (let i = poolCopy.length - 1; i >= 0; i--) {
+                        if (activeIds.has(poolCopy[i].id)) {
+                            poolCopy.splice(i, 1);
+                        }
+                    }
+                }
+
+                if (poolCopy.length === 0) {
+                    state.isSpinning = false;
+                    dom.slotWindow.classList.remove("spinning");
+                    dom.pickWinnerBtn.disabled = false;
+                    showToast("No other eligible entries left to reroll!", "warning");
+                    return;
+                }
+
+                const chosen = [];
+                const drawCount = Math.min(requestedCount, poolCopy.length);
+                for (let i = 0; i < drawCount; i++) {
+                    const randIdx = secureRandomInt(poolCopy.length);
+                    chosen.push(poolCopy[randIdx]);
+                    poolCopy.splice(randIdx, 1);
+                }
+
+                // Slot-machine ticker deceleration
+                let step = 0;
+                const totalSteps = 26;
+
+                function spinStep() {
+                    step++;
+                    if (step < totalSteps) {
+                        const randomPreview = state.eligibleEntries[secureRandomInt(state.eligibleEntries.length)];
+                        renderSlotEntry(randomPreview);
+                        playSound("tick");
+                        const delay = 40 + Math.pow(step / totalSteps, 2.2) * 190;
+                        setTimeout(spinStep, delay);
+                    } else {
+                        // Finish spin
+                        state.isSpinning = false;
+                        dom.slotWindow.classList.remove("spinning");
+                        renderSlotEntry(chosen[0]);
+                        playSound("win");
+                        launchConfetti();
+
+                        if (rerollIndex !== null && state.currentWinners[rerollIndex]) {
+                            state.currentWinners[rerollIndex] = chosen[0];
+                        } else {
+                            state.currentWinners = chosen;
+                        }
+
+                        const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                        chosen.forEach((w) => {
+                            state.history.unshift({
+                                id: w.id,
+                                userKey: w.userKey,
+                                author: w.author,
+                                authorUrl: w.authorUrl,
+                                text: w.text,
+                                source: w.source,
+                                timestamp
+                            });
+                        });
+
+                        renderWinners();
+                        renderHistory();
+                        applyFilters(); // Updates pool if "Exclude previous winners" is checked
+                    }
+                }
+
+                spinStep();
+            }
+
+            function renderWinners() {
+                if (state.currentWinners.length === 0) {
+                    dom.winnersGrid.innerHTML = "";
+                    return;
+                }
+
+                dom.winnersGrid.innerHTML = state.currentWinners
+                    .map((w, idx) => {
+                        const initial = escapeHtml((w.author || "?").charAt(0).toUpperCase());
+                        const avatarHtml = w.avatar
+                            ? `<img class="winner-avatar" src="${escapeHtml(w.avatar)}" alt="" onerror="this.outerHTML='<div class=\\'winner-avatar\\'>${initial}</div>'">`
+                            : `<div class="winner-avatar">${initial}</div>`;
+
+                        const authorHtml = w.authorUrl
+                            ? `<a class="winner-author-link" href="${escapeHtml(w.authorUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(w.author)} ↗</a>`
+                            : `<span class="winner-author-link">${escapeHtml(w.author)}</span>`;
+
+                        return `
+                            <div class="winner-card">
+                                <div class="winner-top">
+                                    <span class="winner-rank">#${idx + 1}</span>
+                                    ${avatarHtml}
+                                    <div class="winner-author-wrap">
+                                        ${authorHtml}
+                                        <div style="font-size:0.72rem; color:#6ee7b7;">Verified Random Draw</div>
+                                    </div>
+                                </div>
+                                <div class="winner-comment">${escapeHtml(w.text)}</div>
+                                <div class="winner-actions">
+                                    <button type="button" class="btn btn-secondary btn-sm copy-winner-btn" data-idx="${idx}">Copy Winner</button>
+                                    <button type="button" class="btn btn-secondary btn-sm reroll-winner-btn" data-idx="${idx}">↻ Reroll</button>
+                                </div>
+                            </div>
+                        `;
+                    })
+                    .join("");
+            }
+
+            // ======================================================================
+            // 7. DRAW HISTORY LOG & CSV EXPORT
+            // ======================================================================
+            function renderHistory() {
+                const count = state.history.length;
+                dom.historyCount.textContent = count;
+                dom.copyAllHistoryBtn.disabled = count === 0;
+                dom.exportCsvBtn.disabled = count === 0;
+                dom.clearHistoryBtn.disabled = count === 0;
+
+                if (count === 0) {
+                    dom.historyList.innerHTML = `<div class="history-empty">No winners drawn yet. Pick a winner above to record history!</div>`;
+                    return;
+                }
+
+                dom.historyList.innerHTML = state.history
+                    .map((h, i) => `
+                        <div class="history-row">
+                            <div class="history-row-main">
+                                <div class="history-row-name">#${count - i} • ${escapeHtml(h.author)}</div>
+                                <div class="history-row-comment">${escapeHtml(h.text)}</div>
+                            </div>
+                            <span class="history-time">${escapeHtml(h.timestamp)}</span>
+                        </div>
+                    `)
+                    .join("");
+            }
+
+            function exportHistoryCsv() {
+                if (state.history.length === 0) return;
+                const rows = [["Draw Number", "Winner", "Comment", "Channel URL", "Source", "Time"]];
+                const total = state.history.length;
+                state.history.forEach((h, i) => {
+                    rows.push([
+                        total - i,
+                        `"${(h.author || "").replace(/"/g, '""')}"`,
+                        `"${(h.text || "").replace(/"/g, '""')}"`,
+                        `"${(h.authorUrl || "").replace(/"/g, '""')}"`,
+                        `"${(h.source || "").replace(/"/g, '""')}"`,
+                        `"${(h.timestamp || "").replace(/"/g, '""')}"`
+                    ]);
+                });
+                const csvContent = rows.map((r) => r.join(",")).join("\n");
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `giveaway-winners-${new Date().toISOString().slice(0, 10)}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showToast("CSV downloaded!", "success");
+            }
+
+            // ======================================================================
+            // 8. EVENT LISTENERS & INITIALIZATION
+            // ======================================================================
+            // Tabs switching
+            dom.tabBtns.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const target = btn.dataset.tab;
+                    dom.tabBtns.forEach((b) => {
+                        const active = b.dataset.tab === target;
+                        b.classList.toggle("active", active);
+                        b.setAttribute("aria-selected", String(active));
+                    });
+                    dom.panelYoutube.classList.toggle("active", target === "youtube");
+                    dom.panelManual.classList.toggle("active", target === "manual");
+                });
+            });
+
+            // API Key Accordion & Persistence
+            dom.apiAccordionToggle.addEventListener("click", () => {
+                const isOpen = dom.apiAccordion.classList.toggle("open");
+                dom.apiAccordionToggle.setAttribute("aria-expanded", String(isOpen));
+            });
+
+            dom.toggleKeyEye.addEventListener("click", () => {
+                dom.ytApiKey.type = dom.ytApiKey.type === "password" ? "text" : "password";
+            });
+
+            dom.ytApiKey.addEventListener("input", () => {
+                if (dom.saveKeyCheckbox.checked) {
+                    localStorage.setItem(STORAGE_KEY_API, dom.ytApiKey.value.trim());
+                }
+            });
+
+            dom.saveKeyCheckbox.addEventListener("change", () => {
+                if (dom.saveKeyCheckbox.checked) {
+                    localStorage.setItem(STORAGE_KEY_API, dom.ytApiKey.value.trim());
+                    showToast("API key saved in browser.", "success");
+                } else {
+                    localStorage.removeItem(STORAGE_KEY_API);
+                    showToast("Saved API key cleared from browser.", "info");
+                }
+            });
+
+            dom.resetKeyBtn.addEventListener("click", () => {
+                dom.ytApiKey.value = "";
+                localStorage.removeItem(STORAGE_KEY_API);
+                showToast("API key cleared.", "info");
+            });
+
+            // YouTube & Manual triggers
+            dom.fetchYtBtn.addEventListener("click", fetchYouTubeComments);
+            dom.ytUrlInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") fetchYouTubeComments();
+            });
+            dom.loadSampleBtn.addEventListener("click", loadSampleManualEntries);
+            dom.importManualBtn.addEventListener("click", importManualEntries);
+
+            // Live filter updates
+            dom.keywordFilter.addEventListener("input", applyFilters);
+            dom.filterDedupe.addEventListener("change", applyFilters);
+            dom.filterExcludeOwner.addEventListener("change", applyFilters);
+            dom.filterExcludeWinners.addEventListener("change", applyFilters);
+
+            // Pool drawer toggle
+            dom.togglePoolBtn.addEventListener("click", () => {
+                dom.poolList.classList.toggle("open");
+            });
+
+            // Winner picking & card actions
+            dom.pickWinnerBtn.addEventListener("click", () => pickWinners(null));
+
+            dom.winnersGrid.addEventListener("click", (e) => {
+                const copyBtn = e.target.closest(".copy-winner-btn");
+                if (copyBtn) {
+                    const idx = parseInt(copyBtn.dataset.idx, 10);
+                    const w = state.currentWinners[idx];
+                    if (w) copyToClipboard(`${w.author}: "${w.text}"`, `Copied winner #${idx + 1}!`);
+                    return;
+                }
+                const rerollBtn = e.target.closest(".reroll-winner-btn");
+                if (rerollBtn) {
+                    const idx = parseInt(rerollBtn.dataset.idx, 10);
+                    pickWinners(idx);
+                }
+            });
+
+            // History actions
+            dom.copyAllHistoryBtn.addEventListener("click", () => {
+                if (state.history.length === 0) return;
+                const summary = state.history
+                    .map((h, i) => `#${state.history.length - i} ${h.author} — "${h.text}"`)
+                    .join("\n");
+                copyToClipboard(summary, "All winners copied!");
+            });
+
+            dom.exportCsvBtn.addEventListener("click", exportHistoryCsv);
+
+            dom.clearHistoryBtn.addEventListener("click", () => {
+                state.history = [];
+                state.currentWinners = [];
+                renderWinners();
+                renderHistory();
+                applyFilters();
+                showToast("Draw history cleared.", "info");
+            });
+
+            // Keep the configured key out of the visible interface.
+            dom.ytApiKey.value = DEFAULT_API_KEY;
+
+            updatePoolUI();
+        })();
+    </script>
+</body>
+</html>
